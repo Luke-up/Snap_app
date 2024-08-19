@@ -7,14 +7,14 @@ const HomePage = () => {
   const [settings, setSettings] = useState('');
   const [animalsSetting, setAnimalsSetting] = useState(false);
   const [emotionsSetting, setEmotionsSetting] = useState(false);
-  const [extraSetting, setExtrasSetting] = useState(false);
+  const [verbsSetting, setVerbsSetting] = useState(false);
   const navigate = useNavigate();
 
   const createRoom = () => {
     const roomSettings = {
       animals: animalsSetting,
       emotions: emotionsSetting,
-      extra: extraSetting,
+      verbs: verbsSetting,
       ...settings
     };
     socket.emit('createRoom', roomSettings);
@@ -67,14 +67,14 @@ const HomePage = () => {
           checked={emotionsSetting}
           onChange={(e) => setEmotionsSetting(e.target.checked)}
         />
-        <label htmlFor="extraSetting" style={{ marginRight: '10px', marginLeft: '10px' }}>
-          Extra
+        <label htmlFor="verbsSetting" style={{ marginRight: '10px', marginLeft: '10px' }}>
+          Verbs
         </label>
         <input
           type="checkbox"
-          id="extraSetting"
-          checked={extraSetting}
-          onChange={(e) => setExtrasSetting(e.target.checked)}
+          id="verbsSetting"
+          checked={verbsSetting}
+          onChange={(e) => setVerbsSetting(e.target.checked)}
         />
         <button onClick={createRoom}>Create Room</button>
       </div>
