@@ -1,0 +1,51 @@
+.mainViewport {
+    display: flex;
+    gap: 30px;
+    .cardView {
+        display: flex;
+        gap: 30px;
+    }
+}
+
+.userCard {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 20px;
+    width: 100px;
+    border: 1px solid #000;
+    height: 150px;
+}
+
+.otherCards {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-top: 20px;
+    width: 80px;
+    border: 1px solid #000;
+    height: 120px;
+    position: relative;
+    .otherCardsOverlay {
+        display: block;
+        background-color: #fff;
+        width: 100%;
+        height: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        animation: fadeBackground 1s infinite;
+
+        @keyframes fadeBackground {
+            0% {
+                background-color: #fff;
+            }
+            50% {
+                background-color: #f0f0f0;
+            }
+            100% {
+                background-color: #fff;
+            }
+        }
+    }
+}

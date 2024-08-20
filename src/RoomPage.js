@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import socket from './socket';
+import './roompage.scss';
 
 const RoomPage = () => {
   const [name, setName] = useState('');
@@ -62,7 +63,11 @@ const RoomPage = () => {
     });
 
     socket.on('gameStarted', () => {
-      // Handle game start
+      setTimeout(() => {
+        document.querySelectorAll('.otherCardsOverlay').forEach(element => {
+          element.style.display = 'none';
+        });
+      }, 3000);
     });
 
     return () => {
@@ -106,29 +111,38 @@ const RoomPage = () => {
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="Enter your name"
-      />
-      <input
-        type="text"
-        value={chat}
-        onChange={(e) => setChat(e.target.value)}
-        placeholder="Enter your message"
-      />
-      <button onClick={handleReady}>Ready</button>
-      <button onClick={handleChat}>Chat</button>
-      <div ref={chatWindowRef} id="chat_window" style={{ border: '1px solid black', height: '200px',width: '300px', overflowY: 'scroll' }}>
-        
-      </div>
-      <div>
-        <h3>Your Card</h3>
-        <p>{userCard}</p>
-      </div>
-      <div>
-        <h3>Remaining Cards</h3>
-        {remainingCards.map((card, index) => (
-          console.log(card),
-          <p key={index}>{card}</p>
-        ))}
-      </div>
+        />
+        <div className="mainViewport">
+          <div className="chatbox">
+            <input
+              type="text"
+              value={chat}
+              onChange={(e) => setChat(e.target.value)}
+              placeholder="Enter your message"
+            />
+            <button onClick={handleReady}>Ready</button>
+            <button onClick={handleChat}>Chat</button>
+            <div ref={chatWindowRef} id="chat_window" style={{ border: '1px solid black', height: '200px',width: '300px', overflowY: 'scroll' }}>
+            </div>
+          </div>
+          <div className="cardView">
+            <div>
+              <h3>Your Card</h3>
+              <div className="userCard">{userCard ? userCard.hint: ""}</div>
+            </div>
+            <div>
+              <h3>Remaining Cards</h3>
+              {remainingCards.map((card, index) => (
+                <div className="otherCards" key={index}>
+                  <div className="otherCardsOverlay"></div> 
+                  <div className="cardClue">{card.hint}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      
     </div>
   );
 };
