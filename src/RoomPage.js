@@ -10,6 +10,10 @@ const RoomPage = () => {
   const [roomInfo, setRoomInfo] = useState('');
   const chatWindowRef = useRef(null);
   const socketRef = useRef(null);
+  const [snapCheck, setSnapCheck] = useState("none");
+  const [snapPending, setSnapPending] = useState(false);
+  const [readyOkay, setReadyOkay] = useState(false);
+  const [snapOkay, setSnapOkay] = useState(false);
   const [gameState, setGameState] = useState(null);
   const [userCard, setUserCard] = useState(null);
   const [remainingCards, setRemainingCards] = useState([]);
@@ -45,6 +49,24 @@ const RoomPage = () => {
       appendMessage(data.message);
     });
 
+    socket.on('snapCalled', (data) => {
+      appendMessage(data.message);
+      setSnapPending(true);
+    });
+
+    socket.on('snapSuccess', (data) => {
+      appendMessage(data.message);
+    });
+
+    socket.on('snapFailed', (data) => {
+      appendMessage(data.message);
+    });
+
+    socket.on('readyOkay', (data) => {
+      console.log('Room is ready to start!');
+      setReadyOkay(true);
+    });
+
     socket.on('ready', (data) => {
       appendMessage(data.message);
     });
@@ -63,9 +85,11 @@ const RoomPage = () => {
     });
 
     socket.on('gameStarted', () => {
+      setReadyOkay(false);
       setTimeout(() => {
         document.querySelectorAll('.otherCardsOverlay').forEach(element => {
           element.style.display = 'none';
+          setSnapOkay(true);
         });
       }, 3000);
     });
@@ -83,6 +107,10 @@ const RoomPage = () => {
 
   const handleReady = () => {
     socketRef.current.emit('ready', { timestamp: Date.now(), name: name });
+  };
+
+  const handleSnap = () => {
+    socketRef.current.emit('snapCalled', { timestamp: Date.now(), name: name });
   };
 
   const handleChat = () => {
@@ -103,9 +131,30 @@ const RoomPage = () => {
     }
   };
 
+  const checkSnap = (value) => {
+    if (snapCheck === "none") {
+      setSnapCheck(value);
+    } else if (snapCheck === value) {
+      socketRef.current.emit('snapSuccess', { timestamp: Date.now(), name: name });
+    } else {
+      socketRef.current.emit('snapFail', { timestamp: Date.now(), name: name });
+      setSnapCheck("none");
+      failedSnap();
+    }
+  };
+
+  const failedSnap = () => {
+    document.querySelectorAll('.cardOption').forEach(element => {
+      element.style.pointerEvents = 'none';
+      element.style.opacity = '0.5';
+    });
+  }
+
+
   return (
     <div className="App">
       <h1>Snap Game</h1>
+      <h2>{roomInfo}</h2>
       <input
         type="text"
         value={name}
@@ -120,7 +169,8 @@ const RoomPage = () => {
               onChange={(e) => setChat(e.target.value)}
               placeholder="Enter your message"
             />
-            <button onClick={handleReady}>Ready</button>
+            {readyOkay ? <button onClick={handleReady}>Ready</button>:''}
+            {snapOkay ? <button onClick={handleSnap}>Snap</button>:''}
             <button onClick={handleChat}>Chat</button>
             <div ref={chatWindowRef} id="chat_window" style={{ border: '1px solid black', height: '200px',width: '300px', overflowY: 'scroll' }}>
             </div>
@@ -128,15 +178,15 @@ const RoomPage = () => {
           <div className="cardView">
             <div>
               <h3>Your Card</h3>
-              <div className="userCard">{userCard ? userCard.hint: ""}</div>
+              {userCard ? <button onClick={() => {checkSnap(userCard.value)}} className="userCard cardOption">{userCard ? userCard.hint: ""}</button>: ''}
             </div>
             <div>
               <h3>Remaining Cards</h3>
               {remainingCards.map((card, index) => (
-                <div className="otherCards" key={index}>
+                <button onClick={() => {checkSnap(card.value)}} className="otherCards cardOption" key={index}>
                   <div className="otherCardsOverlay"></div> 
                   <div className="cardClue">{card.hint}</div>
-                </div>
+                </button>
               ))}
             </div>
           </div>
