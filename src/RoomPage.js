@@ -6,15 +6,14 @@ import './roompage.scss';
 const RoomPage = () => {
   const [name, setName] = useState('');
   const [chat, setChat] = useState('');
-  const { roomId } = useParams();
   const [roomInfo, setRoomInfo] = useState('');
   const chatWindowRef = useRef(null);
   const socketRef = useRef(null);
   const [snapCheck, setSnapCheck] = useState("none");
   const [snapPending, setSnapPending] = useState(false);
+  const [gameStarted, setGameStarted] = useState(false);
   const [readyOkay, setReadyOkay] = useState(false);
   const [snapOkay, setSnapOkay] = useState(false);
-  const [gameState, setGameState] = useState(null);
   const [userCard, setUserCard] = useState(null);
   const [remainingCards, setRemainingCards] = useState([]);
 
@@ -54,12 +53,30 @@ const RoomPage = () => {
       setSnapPending(true);
     });
 
+    socket.on('noSnapCalled', (data) => {
+      appendMessage(data.message);
+      setSnapPending(false);
+      setGameStarted(false);
+      setSnapOkay(false);
+      setReadyOkay(true);
+    });
+
     socket.on('snapSuccess', (data) => {
       appendMessage(data.message);
+      setSnapPending(false);
+      setGameStarted(false);
+      setSnapOkay(false);
+      setReadyOkay(true);
     });
 
     socket.on('snapFailed', (data) => {
       appendMessage(data.message);
+      setSnapPending(false);
+    });
+
+    socket.on('noSnapFailed', (data) => {
+      appendMessage(data.message);
+      setSnapPending(false);
     });
 
     socket.on('readyOkay', (data) => {
@@ -80,12 +97,20 @@ const RoomPage = () => {
     });
 
     socket.on('receiveCards', ({ userCard, remainingCards }) => {
+      document.querySelectorAll('.otherCardsOverlay').forEach(element => {
+        element.style.display = 'block';
+      });
+      document.querySelectorAll('.cardOption').forEach(element => {
+        element.style.pointerEvents = 'auto';
+        element.style.opacity = '1';
+      });
       setUserCard(userCard);
       setRemainingCards(remainingCards);
     });
 
     socket.on('gameStarted', () => {
       setReadyOkay(false);
+      setGameStarted(true);
       setTimeout(() => {
         document.querySelectorAll('.otherCardsOverlay').forEach(element => {
           element.style.display = 'none';
@@ -96,21 +121,56 @@ const RoomPage = () => {
 
     return () => {
       socket.off('roomJoined');
+      socket.off('readyOkay');
       socket.off('roomCreated');
       socket.off('ready');
+      socket.off('snapCalled');
+      socket.off('snapFailed');
+      socket.off('snapSuccess');
+      socket.off('snapResponse');
       socket.off('chatResponse');
       socket.off('chat');
       socket.off('receiveCards');
       socket.off('gameStarted');
+      socket.off('noSnapCalled');
+      socket.off('noSnapFailed');
+      socket.off('snap');
     };
   }, []);
 
   const handleReady = () => {
+    if (!gameStarted){
     socketRef.current.emit('ready', { timestamp: Date.now(), name: name });
+    }
   };
 
   const handleSnap = () => {
-    socketRef.current.emit('snapCalled', { timestamp: Date.now(), name: name });
+    if (!snapPending) {
+      socketRef.current.emit('snapCalled', { timestamp: Date.now(), name: name });
+    }
+  };
+
+  const handleNoSnap = () => {
+    if (!snapPending && !checkForMatchingCards()) {
+      socketRef.current.emit('noSnapSuccess', { timestamp: Date.now(), name: name });
+      setSnapPending(false);
+      setGameStarted(false);
+      setSnapOkay(false);
+      setReadyOkay(true);
+    } else {
+      socketRef.current.emit('noSnapFailure', { timestamp: Date.now(), name: name });
+    }
+  };
+
+  const checkForMatchingCards = () => {
+    if (!userCard || !remainingCards) return false;
+    const userCardMatch = remainingCards.some(card => card.value === userCard.value);
+  
+    const remainingCardsMatch = remainingCards.some((card, index) => 
+      remainingCards.slice(index + 1).some(otherCard => otherCard.value === card.value)
+    );
+  
+    return userCardMatch || remainingCardsMatch;
   };
 
   const handleChat = () => {
@@ -132,14 +192,25 @@ const RoomPage = () => {
   };
 
   const checkSnap = (value) => {
-    if (snapCheck === "none") {
-      setSnapCheck(value);
-    } else if (snapCheck === value) {
-      socketRef.current.emit('snapSuccess', { timestamp: Date.now(), name: name });
-    } else {
-      socketRef.current.emit('snapFail', { timestamp: Date.now(), name: name });
-      setSnapCheck("none");
-      failedSnap();
+    if (!snapPending) {
+      if (snapCheck === "none") {
+        setSnapCheck(value);
+      } else if (snapCheck === value) {
+        socketRef.current.emit('snapSuccess', { timestamp: Date.now(), name: name });
+        appendMessage("Victory!");
+        setSnapCheck("none");
+        setSnapPending(false);
+        setSnapOkay(false);
+        setReadyOkay(true);
+        setGameStarted(false);
+      } else {
+        socketRef.current.emit('snapFailed', { timestamp: Date.now(), name: name });
+        appendMessage("Failure!");
+        setSnapCheck("none");
+        setSnapPending(false);
+        setSnapOkay(false);
+        failedSnap();
+      }
     }
   };
 
@@ -170,7 +241,8 @@ const RoomPage = () => {
               placeholder="Enter your message"
             />
             {readyOkay ? <button onClick={handleReady}>Ready</button>:''}
-            {snapOkay ? <button onClick={handleSnap}>Snap</button>:''}
+            {snapOkay && !snapPending ? <button onClick={handleSnap}>Snap</button>:''}
+            {snapOkay && !snapPending ? <button onClick={handleNoSnap}>No Snap</button>:''}
             <button onClick={handleChat}>Chat</button>
             <div ref={chatWindowRef} id="chat_window" style={{ border: '1px solid black', height: '200px',width: '300px', overflowY: 'scroll' }}>
             </div>
@@ -190,9 +262,7 @@ const RoomPage = () => {
               ))}
             </div>
           </div>
-
         </div>
-      
     </div>
   );
 };
