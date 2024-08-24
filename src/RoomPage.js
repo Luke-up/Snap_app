@@ -144,9 +144,30 @@ const RoomPage = () => {
     }
   };
 
+  let interval;
+
   const handleSnap = () => {
     if (!snapPending) {
+      setSnapPending(true);
       socketRef.current.emit('snapCalled', { timestamp: Date.now(), name: name });
+      function countDown () {
+        let time = 5;
+        interval = setInterval(() => {
+          appendMessage(` ${time}`);
+          time--;
+          console.log("time" + time);
+          if (time === 0) {
+            socketRef.current.emit('snapFailed', { timestamp: Date.now(), name: name });
+            appendMessage("Failure!");
+            setSnapCheck("none");
+            setSnapPending(false);
+            setSnapOkay(false);
+            failedSnap();
+            clearInterval(interval);
+          }
+        }, 1000);
+      }
+      countDown();
     }
   };
 
@@ -203,6 +224,7 @@ const RoomPage = () => {
         setSnapOkay(false);
         setReadyOkay(true);
         setGameStarted(false);
+        clearInterval(interval);
       } else {
         socketRef.current.emit('snapFailed', { timestamp: Date.now(), name: name });
         appendMessage("Failure!");
@@ -210,6 +232,7 @@ const RoomPage = () => {
         setSnapPending(false);
         setSnapOkay(false);
         failedSnap();
+        clearInterval(interval);
       }
     }
   };
