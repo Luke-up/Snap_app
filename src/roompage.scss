@@ -15,6 +15,7 @@
     width: 100px;
     border: 1px solid #000;
     height: 150px;
+    background-color: aqua;
 }
 
 .otherCards {
@@ -26,6 +27,7 @@
     border: 1px solid #000;
     height: 120px;
     position: relative;
+    background-color: aqua;
     .otherCardsOverlay {
         display: block;
         background-color: #fff;
