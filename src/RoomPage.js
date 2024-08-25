@@ -9,13 +9,10 @@ const RoomPage = () => {
   const [roomInfo, setRoomInfo] = useState('');
   const chatWindowRef = useRef(null);
   const socketRef = useRef(null);
-  const [snapCheck, setSnapCheck] = useState("none");
-  const [snapPending, setSnapPending] = useState(false);
-  const [gameStarted, setGameStarted] = useState(false);
-  const [readyOkay, setReadyOkay] = useState(false);
-  const [snapOkay, setSnapOkay] = useState(false);
+  const [gameState, setGameState] = useState({lobby: true, inGame: false, gameHero: false, gameObserver: false, gameLoser: false, gameCheck: false});
   const [userCard, setUserCard] = useState(null);
   const [remainingCards, setRemainingCards] = useState([]);
+  let selectedCards = [];
 
   useEffect(() => {
     socketRef.current = socket;
@@ -36,60 +33,17 @@ const RoomPage = () => {
       console.log('disconnected from server');
     });
 
-    socket.on('snapResponse', (data) => {
-      appendMessage(data.message);
-    });
-
-    socket.on('snap', (data) => {
-      appendMessage(data.message);
-    });
-
-    socket.on('readyResponse', (data) => {
-      appendMessage(data.message);
-    });
-
-    socket.on('snapCalled', (data) => {
-      appendMessage(data.message);
-      setSnapPending(true);
-    });
-
-    socket.on('noSnapCalled', (data) => {
-      appendMessage(data.message);
-      setSnapPending(false);
-      setGameStarted(false);
-      setSnapOkay(false);
-      setReadyOkay(true);
-    });
-
-    socket.on('snapSuccess', (data) => {
-      appendMessage(data.message);
-      setSnapPending(false);
-      setGameStarted(false);
-      setSnapOkay(false);
-      setReadyOkay(true);
-    });
-
-    socket.on('snapFailed', (data) => {
-      appendMessage(data.message);
-      setSnapPending(false);
-    });
-
-    socket.on('noSnapFailed', (data) => {
-      appendMessage(data.message);
-      setSnapPending(false);
-    });
-
-    socket.on('readyOkay', (data) => {
-      console.log('Room is ready to start!');
-      setReadyOkay(true);
-    });
-
-    socket.on('ready', (data) => {
-      appendMessage(data.message);
-    });
-
-    socket.on('chatResponse', (data) => {
-      appendMessage(data.message);
+    socket.on('gamePlay', (data) => {
+        setGameState(data.state);
+        if (data.message) {
+          appendMessage(data.message);
+        }
+        if (data.action && data.action === 'gameStart') {
+          gameStart();
+        }
+        if (data.action && data.action === 'snap') {
+          snapStart();
+        }
     });
 
     socket.on('chat', (data) => {
@@ -97,105 +51,77 @@ const RoomPage = () => {
     });
 
     socket.on('receiveCards', ({ userCard, remainingCards }) => {
-      document.querySelectorAll('.otherCardsOverlay').forEach(element => {
-        element.style.display = 'block';
-      });
-      document.querySelectorAll('.cardOption').forEach(element => {
-        element.style.pointerEvents = 'auto';
-        element.style.opacity = '1';
-      });
-      setUserCard(userCard);
-      setRemainingCards(remainingCards);
-    });
-
-    socket.on('gameStarted', () => {
-      setReadyOkay(false);
-      setGameStarted(true);
-      setTimeout(() => {
-        document.querySelectorAll('.otherCardsOverlay').forEach(element => {
-          element.style.display = 'none';
-          setSnapOkay(true);
-        });
-      }, 3000);
+      receiveCards({ userCard, remainingCards });
     });
 
     return () => {
       socket.off('roomJoined');
-      socket.off('readyOkay');
       socket.off('roomCreated');
-      socket.off('ready');
-      socket.off('snapCalled');
-      socket.off('snapFailed');
-      socket.off('snapSuccess');
-      socket.off('snapResponse');
-      socket.off('chatResponse');
+      socket.off('gamePlay');
       socket.off('chat');
       socket.off('receiveCards');
-      socket.off('gameStarted');
-      socket.off('noSnapCalled');
-      socket.off('noSnapFailed');
-      socket.off('snap');
     };
   }, []);
 
-  const handleReady = () => {
-    if (!gameStarted){
-    socketRef.current.emit('ready', { timestamp: Date.now(), name: name });
-    }
+  const handleChat = () => {
+    socketRef.current.emit('chat', { timestamp: Date.now(), name: name, chat: chat });
   };
 
-  let interval;
+  const handleReady = () => {
+    socketRef.current.emit('action', { timestamp: Date.now(), name: name, action: 'ready' });
+  };
 
   const handleSnap = () => {
-    if (!snapPending) {
-      setSnapPending(true);
-      socketRef.current.emit('snapCalled', { timestamp: Date.now(), name: name });
-      function countDown () {
-        let time = 5;
-        interval = setInterval(() => {
-          appendMessage(` ${time}`);
-          time--;
-          console.log("time" + time);
-          if (time === 0) {
-            socketRef.current.emit('snapFailed', { timestamp: Date.now(), name: name });
-            appendMessage("Failure!");
-            setSnapCheck("none");
-            setSnapPending(false);
-            setSnapOkay(false);
-            failedSnap();
-            clearInterval(interval);
-          }
-        }, 1000);
-      }
-      countDown();
-    }
+    socketRef.current.emit('action', { timestamp: Date.now(), name: name, action: 'snap' });
   };
 
   const handleNoSnap = () => {
-    if (!snapPending && !checkForMatchingCards()) {
-      socketRef.current.emit('noSnapSuccess', { timestamp: Date.now(), name: name });
-      setSnapPending(false);
-      setGameStarted(false);
-      setSnapOkay(false);
-      setReadyOkay(true);
+    socketRef.current.emit('action', { timestamp: Date.now(), name: name, action: 'noSnap' });
+  };
+
+  const handleCardSelect = (card, elementID) => {
+    if (gameState.gameHero) {
+      document.getElementById(elementID).style.backgroundColor = 'red';
+      if (selectedCards[0] && selectedCards[0].elementID === elementID){
+        document.getElementById(elementID).style.backgroundColor = 'aqua';
+        selectedCards = [];
+      } else if (selectedCards.length !== 0) {
+        selectedCards.push({card: card, elementID: elementID});
+        socketRef.current.emit('action', { timestamp: Date.now(), name: name, cards: selectedCards, action: 'cardSelect' });
+        selectedCards = [];
+      } else {
+        selectedCards.push({card: card, elementID: elementID});
+      }
     } else {
-      socketRef.current.emit('noSnapFailure', { timestamp: Date.now(), name: name });
+      return;
     }
   };
 
-  const checkForMatchingCards = () => {
-    if (!userCard || !remainingCards) return false;
-    const userCardMatch = remainingCards.some(card => card.value === userCard.value);
-  
-    const remainingCardsMatch = remainingCards.some((card, index) => 
-      remainingCards.slice(index + 1).some(otherCard => otherCard.value === card.value)
-    );
-  
-    return userCardMatch || remainingCardsMatch;
+  const receiveCards = ({ userCard, remainingCards }) => {
+    console.log(userCard, remainingCards);
+    document.querySelectorAll('.otherCardsOverlay').forEach(element => {
+      element.style.display = 'block';
+    });
+    document.querySelectorAll('.cardOption').forEach(element => {
+      element.style.pointerEvents = 'auto';
+      element.style.backgroundColor = 'aqua';
+      element.style.opacity = '1';
+    });
+    setUserCard(userCard);
+    setRemainingCards(remainingCards);
   };
 
-  const handleChat = () => {
-    socketRef.current.emit('chat', { timestamp: Date.now(), name: name, chat: chat });
+  const gameStart = () => {
+    document.querySelectorAll('.otherCardsOverlay').forEach(element => {
+      element.style.display = 'none';
+    });
+  };
+
+  const snapStart = () => {
+    document.querySelectorAll('.cardOption').forEach(element => {
+      element.style.pointerEvents = 'auto';
+      element.style.opacity = '1';
+    });
   };
 
   const appendMessage = (message) => {
@@ -211,39 +137,6 @@ const RoomPage = () => {
       }
     }
   };
-
-  const checkSnap = (value) => {
-    if (!snapPending) {
-      if (snapCheck === "none") {
-        setSnapCheck(value);
-      } else if (snapCheck === value) {
-        socketRef.current.emit('snapSuccess', { timestamp: Date.now(), name: name });
-        appendMessage("Victory!");
-        setSnapCheck("none");
-        setSnapPending(false);
-        setSnapOkay(false);
-        setReadyOkay(true);
-        setGameStarted(false);
-        clearInterval(interval);
-      } else {
-        socketRef.current.emit('snapFailed', { timestamp: Date.now(), name: name });
-        appendMessage("Failure!");
-        setSnapCheck("none");
-        setSnapPending(false);
-        setSnapOkay(false);
-        failedSnap();
-        clearInterval(interval);
-      }
-    }
-  };
-
-  const failedSnap = () => {
-    document.querySelectorAll('.cardOption').forEach(element => {
-      element.style.pointerEvents = 'none';
-      element.style.opacity = '0.5';
-    });
-  }
-
 
   return (
     <div className="App">
@@ -263,9 +156,9 @@ const RoomPage = () => {
               onChange={(e) => setChat(e.target.value)}
               placeholder="Enter your message"
             />
-            {readyOkay ? <button onClick={handleReady}>Ready</button>:''}
-            {snapOkay && !snapPending ? <button onClick={handleSnap}>Snap</button>:''}
-            {snapOkay && !snapPending ? <button onClick={handleNoSnap}>No Snap</button>:''}
+            {gameState.lobby ? <button onClick={handleReady}>Ready</button>:''}
+            {gameState.inGame ? <button onClick={handleSnap}>Snap</button>:''}
+            {gameState.inGame ? <button onClick={handleNoSnap}>No Snap</button>:''}
             <button onClick={handleChat}>Chat</button>
             <div ref={chatWindowRef} id="chat_window" style={{ border: '1px solid black', height: '200px',width: '300px', overflowY: 'scroll' }}>
             </div>
@@ -273,16 +166,16 @@ const RoomPage = () => {
           <div className="cardView">
             <div>
               <h3>Your Card</h3>
-              {userCard ? <button onClick={() => {checkSnap(userCard.value)}} className="userCard cardOption">{userCard ? userCard.hint: ""}</button>: ''}
+              {userCard ? <button onClick={() => {handleCardSelect(userCard.value, "userCard")}} id="userCard" className="userCard cardOption">{userCard.hint}</button>: ''}
             </div>
             <div>
               <h3>Remaining Cards</h3>
-              {remainingCards.map((card, index) => (
-                <button onClick={() => {checkSnap(card.value)}} className="otherCards cardOption" key={index}>
+              {remainingCards ? remainingCards.map((card, index) => (
+                <button onClick={() => {handleCardSelect(card.value, `otherCard-${index}`)}} id={"otherCard-" + index} className="otherCards cardOption" key={index}>
                   <div className="otherCardsOverlay"></div> 
                   <div className="cardClue">{card.hint}</div>
                 </button>
-              ))}
+              )) : ''}
             </div>
           </div>
         </div>
