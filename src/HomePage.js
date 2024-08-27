@@ -4,6 +4,7 @@ import socket from './socket';
 
 const HomePage = () => {
   const [roomId, setRoomId] = useState('');
+  const [name, setName] = useState('');
   const [settings, setSettings] = useState('');
   const [animalsSetting, setAnimalsSetting] = useState(false);
   const [emotionsSetting, setEmotionsSetting] = useState(false);
@@ -12,6 +13,7 @@ const HomePage = () => {
 
   const createRoom = () => {
     const roomSettings = {
+      name: name,
       animals: animalsSetting,
       emotions: emotionsSetting,
       verbs: verbsSetting,
@@ -21,7 +23,11 @@ const HomePage = () => {
   };
 
   const joinRoom = () => {
-    socket.emit('joinRoom', roomId);
+    const joinSettings = {
+      name: name,
+      roomId: roomId,
+    };
+    socket.emit('joinRoom', joinSettings);
   };
 
   useEffect(() => {
@@ -47,6 +53,12 @@ const HomePage = () => {
   return (
     <div id="homeScreen">
       <h1>Create or Join a Room</h1>
+      <input
+        type="text"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        placeholder="Enter your name"
+        />
       <div>
         <h2>Create Room</h2>
         <label htmlFor="animalsSetting" style={{ marginRight: '10px', marginLeft: '10px' }}>
