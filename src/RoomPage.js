@@ -12,6 +12,7 @@ const RoomPage = () => {
   const [gameState, setGameState] = useState({lobby: true, inGame: false, gameHero: false, gameObserver: false, gameLoser: false, gameCheck: false});
   const [userCard, setUserCard] = useState(null);
   const [remainingCards, setRemainingCards] = useState([]);
+  const [scoreCard, setScoreCard] = useState([]);
   let selectedCards = [];
 
   useEffect(() => {
@@ -19,10 +20,18 @@ const RoomPage = () => {
 
     socket.on('roomJoined', (data) => {
       setRoomInfo(`Room ID: ${data.roomId}, Settings: ${data.settings}`);
+      if (data.scoreCard) {
+        console.log(data.scoreCard);
+        setScoreCard(data.scoreCard);
+      }
     });
 
     socket.on('roomCreated', (data) => {
       setRoomInfo(`Room ID: ${data.roomId}, Settings: ${data.settings}`);
+      if (data.scoreCard) {
+        console.log(data.scoreCard);
+        setScoreCard(data.scoreCard);
+      }
     });
 
     socket.on('connect', () => {
@@ -43,6 +52,10 @@ const RoomPage = () => {
         }
         if (data.action && data.action === 'snap') {
           snapStart();
+        }
+        if (data.scoreCard) {
+          console.log(data.scoreCard);
+          setScoreCard(data.scoreCard);
         }
     });
 
@@ -142,12 +155,12 @@ const RoomPage = () => {
     <div className="App">
       <h1>Snap Game</h1>
       <h2>{roomInfo}</h2>
-      <input
-        type="text"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="Enter your name"
-        />
+      <div className="scoreCard">
+        <h3>Score Card</h3>
+        {scoreCard ? Object.entries(scoreCard).map(([id, { name, score }]) => (
+          <p key={id}>{name}: {score}</p>
+        )) : ''}
+      </div>
         <div className="mainViewport">
           <div className="chatbox">
             <input

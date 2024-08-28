@@ -13,11 +13,13 @@ const HomePage = () => {
 
   const createRoom = () => {
     const roomSettings = {
-      name: name,
+      categories: {
       animals: animalsSetting,
       emotions: emotionsSetting,
       verbs: verbsSetting,
       ...settings
+      }, 
+      name: name,
     };
     socket.emit('createRoom', roomSettings);
   };
