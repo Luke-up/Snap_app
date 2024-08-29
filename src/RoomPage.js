@@ -16,23 +16,8 @@ const RoomPage = () => {
   let selectedCards = [];
 
   useEffect(() => {
+    setName(sessionStorage.getItem('name'));
     socketRef.current = socket;
-
-    socket.on('roomJoined', (data) => {
-      setRoomInfo(`Room ID: ${data.roomId}, Settings: ${data.settings}`);
-      if (data.scoreCard) {
-        console.log(data.scoreCard);
-        setScoreCard(data.scoreCard);
-      }
-    });
-
-    socket.on('roomCreated', (data) => {
-      setRoomInfo(`Room ID: ${data.roomId}, Settings: ${data.settings}`);
-      if (data.scoreCard) {
-        console.log(data.scoreCard);
-        setScoreCard(data.scoreCard);
-      }
-    });
 
     socket.on('connect', () => {
       console.log('connected to server');
@@ -78,6 +63,10 @@ const RoomPage = () => {
 
   const handleChat = () => {
     socketRef.current.emit('chat', { timestamp: Date.now(), name: name, chat: chat });
+  };
+
+  const handleLogOut = () => {
+    socketRef.current.emit('action', { timestamp: Date.now(), name: name, action: 'logout' });
   };
 
   const handleReady = () => {
@@ -173,6 +162,7 @@ const RoomPage = () => {
             {gameState.inGame ? <button onClick={handleSnap}>Snap</button>:''}
             {gameState.inGame ? <button onClick={handleNoSnap}>No Snap</button>:''}
             <button onClick={handleChat}>Chat</button>
+            <button onClick={handleLogOut}>Log Out</button>
             <div ref={chatWindowRef} id="chat_window" style={{ border: '1px solid black', height: '200px',width: '300px', overflowY: 'scroll' }}>
             </div>
           </div>

@@ -21,6 +21,7 @@ const HomePage = () => {
       }, 
       name: name,
     };
+    sessionStorage.setItem('name', name);
     socket.emit('createRoom', roomSettings);
   };
 
@@ -29,6 +30,7 @@ const HomePage = () => {
       name: name,
       roomId: roomId,
     };
+    sessionStorage.setItem('name', name);
     socket.emit('joinRoom', joinSettings);
   };
 
