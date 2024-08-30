@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import socket from './socket';
 import './roompage.scss';
 
@@ -14,9 +14,12 @@ const RoomPage = () => {
   const [remainingCards, setRemainingCards] = useState([]);
   const [scoreCard, setScoreCard] = useState([]);
   let selectedCards = [];
+  const navigate = useNavigate();
 
   useEffect(() => {
     setName(sessionStorage.getItem('name'));
+    setScoreCard(JSON.parse(sessionStorage.getItem('scoreCard')));
+    console.log(scoreCard)
     socketRef.current = socket;
 
     socket.on('connect', () => {
@@ -39,13 +42,22 @@ const RoomPage = () => {
           snapStart();
         }
         if (data.scoreCard) {
-          console.log(data.scoreCard);
           setScoreCard(data.scoreCard);
         }
     });
 
     socket.on('chat', (data) => {
       appendMessage(data.message);
+    });
+
+    socket.on('playerJoined', (data) => {
+      appendMessage(data.message);
+      setScoreCard(data.scoreCard);
+    });
+
+    socket.on('roomJoined', (data) => {
+      appendMessage(data.message);
+      setScoreCard(data.scoreCard);
     });
 
     socket.on('receiveCards', ({ userCard, remainingCards }) => {
@@ -58,6 +70,7 @@ const RoomPage = () => {
       socket.off('gamePlay');
       socket.off('chat');
       socket.off('receiveCards');
+      socket.off('playerJoined');
     };
   }, []);
 
@@ -67,6 +80,7 @@ const RoomPage = () => {
 
   const handleLogOut = () => {
     socketRef.current.emit('action', { timestamp: Date.now(), name: name, action: 'logout' });
+    navigate(`/`);
   };
 
   const handleReady = () => {

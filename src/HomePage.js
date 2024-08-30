@@ -40,6 +40,7 @@ const HomePage = () => {
     });
 
     socket.on('roomJoined', (data) => {
+      sessionStorage.setItem('scoreCard', JSON.stringify(data));
       navigate(`/room/${data.roomId}`);
     });
 
