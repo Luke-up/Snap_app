@@ -18,8 +18,7 @@ const RoomPage = () => {
 
   useEffect(() => {
     setName(sessionStorage.getItem('name'));
-    setScoreCard(JSON.parse(sessionStorage.getItem('scoreCard')));
-    console.log(scoreCard)
+    setScoreCard(JSON.parse(sessionStorage.getItem('scoreCard')).scoreCard);
     socketRef.current = socket;
 
     socket.on('connect', () => {
