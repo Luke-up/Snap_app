@@ -21,6 +21,7 @@ const HomePage = () => {
       }, 
       name: name,
     };
+    sessionStorage.setItem('name', name);
     socket.emit('createRoom', roomSettings);
   };
 
@@ -29,15 +30,19 @@ const HomePage = () => {
       name: name,
       roomId: roomId,
     };
+    sessionStorage.setItem('name', name);
     socket.emit('joinRoom', joinSettings);
   };
 
   useEffect(() => {
     socket.on('roomCreated', (data) => {
+      sessionStorage.setItem('scoreCard', JSON.stringify(data));
       navigate(`/room/${data.roomId}`);
     });
 
     socket.on('roomJoined', (data) => {
+      console.log(data.scoreCard);
+      sessionStorage.setItem('scoreCard', JSON.stringify(data));
       navigate(`/room/${data.roomId}`);
     });
 
