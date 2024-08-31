@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import socket from './socket';
+import './homepage.scss';
 
 const HomePage = () => {
   const [roomId, setRoomId] = useState('');
   const [name, setName] = useState('');
-  const [settings, setSettings] = useState('');
   const [animalsSetting, setAnimalsSetting] = useState(false);
   const [emotionsSetting, setEmotionsSetting] = useState(false);
   const [verbsSetting, setVerbsSetting] = useState(false);
@@ -17,7 +17,6 @@ const HomePage = () => {
       animals: animalsSetting,
       emotions: emotionsSetting,
       verbs: verbsSetting,
-      ...settings
       }, 
       name: name,
     };

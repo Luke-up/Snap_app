@@ -155,15 +155,39 @@ const RoomPage = () => {
 
   return (
     <div className="App">
-      <h1>Snap Game</h1>
-      <h2>{roomInfo}</h2>
-      <div className="scoreCard">
-        <h3>Score Card</h3>
-        {scoreCard ? Object.entries(scoreCard).map(([id, { name, score }]) => (
-          <p key={id}>{name}: {score}</p>
-        )) : ''}
+      <div className="displayHeader">
+        <h1>Snap Game</h1>
+        <h2>{roomInfo}</h2>
+        <button onClick={handleLogOut}>Log Out</button>
       </div>
-        <div className="mainViewport">
+      
+      <div className="mainViewport">
+        <div className="sidePanel">
+          <div className="scoreCard">
+            <h3>Score Card</h3>
+            {scoreCard ? Object.entries(scoreCard).map(([id, { name, score }]) => (
+              <p key={id}>{name}: {score}</p>
+            )) : ''}
+          </div>
+        </div>
+        <div className="centerPanel">
+          <div ref={chatWindowRef} id="chat_window" className="chatWindow"></div>
+          <div className="gameButtons">
+            {gameState.lobby ? <button className="gameButton ready" onClick={handleReady}>Ready</button>:''}
+            {gameState.inGame ? <button className="gameButton snap" onClick={handleSnap}>Snap</button>:''}
+            {gameState.inGame ? <button className="gameButton noSnap" onClick={handleNoSnap}>No Snap</button>:''} 
+          </div>
+          <div className="ownCard">
+            {userCard ? <button onClick={() => {handleCardSelect(userCard.value, "userCard")}} id="userCard" className="userCard cardOption"><h5>Your Card</h5><p>{userCard.hint}</p></button>: ''}
+          </div>
+          <div className="extraCards">
+            {remainingCards ? remainingCards.map((card, index) => (
+              <button onClick={() => {handleCardSelect(card.value, `otherCard-${index}`)}} id={"otherCard-" + index} className="otherCards cardOption" key={index}>
+                <div className="otherCardsOverlay"></div> 
+                <div className="cardClue">{card.hint}</div>
+              </button>
+            )) : ''}
+          </div>
           <div className="chatbox">
             <input
               type="text"
@@ -171,30 +195,10 @@ const RoomPage = () => {
               onChange={(e) => setChat(e.target.value)}
               placeholder="Enter your message"
             />
-            {gameState.lobby ? <button onClick={handleReady}>Ready</button>:''}
-            {gameState.inGame ? <button onClick={handleSnap}>Snap</button>:''}
-            {gameState.inGame ? <button onClick={handleNoSnap}>No Snap</button>:''}
             <button onClick={handleChat}>Chat</button>
-            <button onClick={handleLogOut}>Log Out</button>
-            <div ref={chatWindowRef} id="chat_window" style={{ border: '1px solid black', height: '200px',width: '300px', overflowY: 'scroll' }}>
-            </div>
-          </div>
-          <div className="cardView">
-            <div>
-              <h3>Your Card</h3>
-              {userCard ? <button onClick={() => {handleCardSelect(userCard.value, "userCard")}} id="userCard" className="userCard cardOption">{userCard.hint}</button>: ''}
-            </div>
-            <div>
-              <h3>Remaining Cards</h3>
-              {remainingCards ? remainingCards.map((card, index) => (
-                <button onClick={() => {handleCardSelect(card.value, `otherCard-${index}`)}} id={"otherCard-" + index} className="otherCards cardOption" key={index}>
-                  <div className="otherCardsOverlay"></div> 
-                  <div className="cardClue">{card.hint}</div>
-                </button>
-              )) : ''}
-            </div>
           </div>
         </div>
+      </div>
     </div>
   );
 };
