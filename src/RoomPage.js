@@ -18,8 +18,13 @@ const RoomPage = () => {
 
   useEffect(() => {
     setName(sessionStorage.getItem('name'));
-    setScoreCard(JSON.parse(sessionStorage.getItem('scoreCard')).scoreCard);
+    setRoomInfo(sessionStorage.getItem('roomId'));
+    const newScoreCard = JSON.parse(sessionStorage.getItem('scoreCard'));
+    setScoreCard(newScoreCard.scoreCard);
     socketRef.current = socket;
+    if (Object.keys(newScoreCard.scoreCard).length === 1){
+      setGameState({lobby: false, inGame: false, gameHero: false, gameObserver: true, gameLoser: false, gameCheck: false});
+    }
 
     socket.on('connect', () => {
       console.log('connected to server');
@@ -42,7 +47,11 @@ const RoomPage = () => {
         }
         if (data.scoreCard) {
           setScoreCard(data.scoreCard);
+          if (Object.keys(data.scoreCard).length === 1){
+            setGameState({lobby: false, inGame: false, gameHero: false, gameObserver: true, gameLoser: false, gameCheck: false});
+          }
         }
+        
     });
 
     socket.on('chat', (data) => {
@@ -52,11 +61,17 @@ const RoomPage = () => {
     socket.on('playerJoined', (data) => {
       appendMessage(data.message);
       setScoreCard(data.scoreCard);
+      if (Object.keys(data.scoreCard).length > 1){
+        setGameState({lobby: true, inGame: false, gameHero: false, gameObserver: false, gameLoser: false, gameCheck: false});
+      }
     });
 
     socket.on('roomJoined', (data) => {
       appendMessage(data.message);
       setScoreCard(data.scoreCard);
+      if (Object.keys(data.scoreCard).length > 1){
+        setGameState({lobby: true, inGame: false, gameHero: false, gameObserver: false, gameLoser: false, gameCheck: false});
+      }
     });
 
     socket.on('receiveCards', ({ userCard, remainingCards }) => {
@@ -73,8 +88,10 @@ const RoomPage = () => {
     };
   }, []);
 
-  const handleChat = () => {
+  const handleChat = (event) => {
+    event.preventDefault();
     socketRef.current.emit('chat', { timestamp: Date.now(), name: name, chat: chat });
+    setChat('');
   };
 
   const handleLogOut = () => {
@@ -96,9 +113,9 @@ const RoomPage = () => {
 
   const handleCardSelect = (card, elementID) => {
     if (gameState.gameHero) {
-      document.getElementById(elementID).style.backgroundColor = 'red';
+      document.getElementById(elementID).classList.add('selected');
       if (selectedCards[0] && selectedCards[0].elementID === elementID){
-        document.getElementById(elementID).style.backgroundColor = 'aqua';
+        document.getElementById(elementID).classList.remove('selected');
         selectedCards = [];
       } else if (selectedCards.length !== 0) {
         selectedCards.push({card: card, elementID: elementID});
@@ -118,9 +135,7 @@ const RoomPage = () => {
       element.style.display = 'block';
     });
     document.querySelectorAll('.cardOption').forEach(element => {
-      element.style.pointerEvents = 'auto';
-      element.style.backgroundColor = 'aqua';
-      element.style.opacity = '1';
+      element.classList.remove('selected');
     });
     setUserCard(userCard);
     setRemainingCards(remainingCards);
@@ -155,46 +170,53 @@ const RoomPage = () => {
 
   return (
     <div className="App">
-      <h1>Snap Game</h1>
-      <h2>{roomInfo}</h2>
-      <div className="scoreCard">
-        <h3>Score Card</h3>
-        {scoreCard ? Object.entries(scoreCard).map(([id, { name, score }]) => (
-          <p key={id}>{name}: {score}</p>
-        )) : ''}
+      <div className="displayHeader">
+        <h1>スナップゲーム</h1>
+        <h2>room code = {roomInfo}</h2>
+        <button onClick={handleLogOut}>バイバイ</button>
       </div>
-        <div className="mainViewport">
+      
+      <div className="mainViewport">
+        
+        <div className="infoPanel">
+          <div className="scoreCard">
+            {scoreCard ? Object.entries(scoreCard).map(([id, { name, score }]) => (
+              <p key={id}>{name}: {score}</p>
+            )) : ''}
+          </div>
+          <div ref={chatWindowRef} id="chat_window" className="chatWindow"></div>
+        </div>
+        <div className="extraCards">
+          {remainingCards ? remainingCards.map((card, index) => (
+            <button onClick={() => {handleCardSelect(card.value, `otherCard-${index}`)}} id={"otherCard-" + index} className="otherCards cardOption" key={index}>
+              <div className="otherCardsOverlay"></div> 
+              <div className="cardClue">{card.hint}</div>
+            </button>
+          )) : ''}
+        </div>
+        <div className="ownCard">
+          {userCard ? <button onClick={() => {handleCardSelect(userCard.value, "userCard")}} id="userCard" className="userCard cardOption"><p>{userCard.hint}</p></button>: ''}
+        </div>
+
+        <div className="gameControls">
+          <div className="gameButtons">
+            {gameState.lobby ? <button className="gameButton ready" onClick={handleReady}></button>:''}
+            {gameState.inGame ? <button className="gameButton snap" onClick={handleSnap}></button>:''}
+            {gameState.inGame ? <button className="gameButton noSnap" onClick={handleNoSnap}></button>:''} 
+          </div>
           <div className="chatbox">
-            <input
+            <form onSubmit={handleChat}>
+              <input
               type="text"
               value={chat}
               onChange={(e) => setChat(e.target.value)}
-              placeholder="Enter your message"
-            />
-            {gameState.lobby ? <button onClick={handleReady}>Ready</button>:''}
-            {gameState.inGame ? <button onClick={handleSnap}>Snap</button>:''}
-            {gameState.inGame ? <button onClick={handleNoSnap}>No Snap</button>:''}
-            <button onClick={handleChat}>Chat</button>
-            <button onClick={handleLogOut}>Log Out</button>
-            <div ref={chatWindowRef} id="chat_window" style={{ border: '1px solid black', height: '200px',width: '300px', overflowY: 'scroll' }}>
-            </div>
-          </div>
-          <div className="cardView">
-            <div>
-              <h3>Your Card</h3>
-              {userCard ? <button onClick={() => {handleCardSelect(userCard.value, "userCard")}} id="userCard" className="userCard cardOption">{userCard.hint}</button>: ''}
-            </div>
-            <div>
-              <h3>Remaining Cards</h3>
-              {remainingCards ? remainingCards.map((card, index) => (
-                <button onClick={() => {handleCardSelect(card.value, `otherCard-${index}`)}} id={"otherCard-" + index} className="otherCards cardOption" key={index}>
-                  <div className="otherCardsOverlay"></div> 
-                  <div className="cardClue">{card.hint}</div>
-                </button>
-              )) : ''}
-            </div>
+              placeholder="チャット"
+              />
+              <button type="submit"></button>
+            </form>
           </div>
         </div>
+      </div>
     </div>
   );
 };
