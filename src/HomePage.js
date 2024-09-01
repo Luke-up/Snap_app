@@ -36,12 +36,14 @@ const HomePage = () => {
   useEffect(() => {
     socket.on('roomCreated', (data) => {
       sessionStorage.setItem('scoreCard', JSON.stringify(data));
+      sessionStorage.setItem('roomId', data.roomId);
       navigate(`/room/${data.roomId}`);
     });
 
     socket.on('roomJoined', (data) => {
       console.log(data.scoreCard);
       sessionStorage.setItem('scoreCard', JSON.stringify(data));
+      sessionStorage.setItem('roomId', data.roomId);
       navigate(`/room/${data.roomId}`);
     });
 
