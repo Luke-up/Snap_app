@@ -60,55 +60,63 @@ const HomePage = () => {
 
   return (
     <div id="homeScreen">
-      <h1>Create or Join a Room</h1>
-      <input
-        type="text"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        placeholder="Enter your name"
-        />
-      <div>
-        <h2>Create Room</h2>
-        <label htmlFor="animalsSetting" style={{ marginRight: '10px', marginLeft: '10px' }}>
-          Animals
-        </label>
-        <input
-          type="checkbox"
-          id="animalsSetting"
-          checked={animalsSetting}
-          onChange={(e) => setAnimalsSetting(e.target.checked)}
-        />
-        <label htmlFor="emotionsSetting" style={{ marginRight: '10px', marginLeft: '10px' }}>
-          Emotions
-        </label>
-        <input
-          type="checkbox"
-          id="emotionsSetting"
-          checked={emotionsSetting}
-          onChange={(e) => setEmotionsSetting(e.target.checked)}
-        />
-        <label htmlFor="verbsSetting" style={{ marginRight: '10px', marginLeft: '10px' }}>
-          Verbs
-        </label>
-        <input
-          type="checkbox"
-          id="verbsSetting"
-          checked={verbsSetting}
-          onChange={(e) => setVerbsSetting(e.target.checked)}
-        />
-        <button onClick={createRoom}>Create Room</button>
-      </div>
-      <div>
-        <h2>Join Room</h2>
-        <label htmlFor="roomId">Room ID:</label>
+      <div className="pageHeader">
+        <h1>Create or Join a Room</h1>
         <input
           type="text"
-          id="roomId"
-          value={roomId}
-          onChange={(e) => setRoomId(e.target.value)}
-          placeholder="Enter room ID"
-        />
-        <button onClick={joinRoom}>Join Room</button>
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Enter your name"
+          />
+      </div>
+      <div className="roomOptions">
+        <div className="createRoom">
+          <h2>Create Room</h2>
+          <div className="checkboxes">
+            <input
+              type="checkbox"
+              id="animalsSetting"
+              checked={animalsSetting}
+              onChange={(e) => setAnimalsSetting(e.target.checked)}
+            />
+            <label htmlFor="animalsSetting">
+              Animals
+            </label>
+            
+            <input
+              type="checkbox"
+              id="emotionsSetting"
+              checked={emotionsSetting}
+              onChange={(e) => setEmotionsSetting(e.target.checked)}
+            />
+            <label htmlFor="emotionsSetting">
+              Emotions
+            </label>
+            
+            <input
+              type="checkbox"
+              id="verbsSetting"
+              checked={verbsSetting}
+              onChange={(e) => setVerbsSetting(e.target.checked)}
+            />
+            <label htmlFor="verbsSetting">
+              Verbs
+            </label>
+          </div>
+          <p>If no options are checked then we might have to surprise you</p>
+          <button onClick={createRoom}>Create Room</button>
+        </div>
+        <div className="joinRoom">
+          <h2>Join Room</h2>
+          <input
+            type="text"
+            id="roomId"
+            value={roomId}
+            onChange={(e) => setRoomId(e.target.value)}
+            placeholder="Enter room ID"
+          />
+          <button onClick={joinRoom}>Join Room</button>
+        </div>
       </div>
     </div>
   );
