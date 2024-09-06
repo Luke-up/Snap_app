@@ -130,15 +130,29 @@ const RoomPage = () => {
   };
 
   const receiveCards = ({ userCard, remainingCards }) => {
-    console.log(userCard, remainingCards);
-    document.querySelectorAll('.otherCardsOverlay').forEach(element => {
-      element.style.display = 'block';
-    });
     document.querySelectorAll('.cardOption').forEach(element => {
-      element.classList.remove('selected');
+      element.style.opacity = '0';
+      element.style.marginTop = '-50px';
     });
-    setUserCard(userCard);
-    setRemainingCards(remainingCards);
+    setTimeout(() => {
+      document.querySelectorAll('.otherCardsOverlay').forEach(element => {
+        element.style.display = 'block';
+      });
+      document.querySelectorAll('.cardOption').forEach(element => {
+        element.classList.remove('selected');
+      });
+      setUserCard(userCard);
+      setRemainingCards(remainingCards);
+    }, 400);
+    setTimeout(() => {
+      resizeFontSize();
+    }, 500);
+    setTimeout(() => {
+      document.querySelectorAll('.cardOption').forEach(element => {
+        element.style.opacity = '1';
+        element.style.marginTop = '0';
+      });
+    }, 1000);
   };
 
   const gameStart = () => {
@@ -168,6 +182,31 @@ const RoomPage = () => {
     }
   };
 
+  const resizeFontSize = () => {
+    document.querySelectorAll('.cardClue').forEach(element => {
+      if (element.textContent.length <= 2) {
+        element.style.fontSize = '40px';
+      } else if (element.textContent.length === 3) {
+        element.style.fontSize = '30px';
+      } else if (element.textContent.length >= 6) {
+        element.style.fontSize = '';
+      } else {
+        element.style.fontSize = '24px';
+      }
+    });
+    document.querySelectorAll('.cardClueUser').forEach(element => {
+      if (element.textContent.length <= 2) {
+        element.style.fontSize = '60px';
+      } else if (element.textContent.length === 3) {
+        element.style.fontSize = '50px';
+      } else if (element.textContent.length >= 6) {
+        element.style.fontSize = '26px';
+      } else {
+        element.style.fontSize = '';
+      }
+    });
+  };
+
   return (
     <div className="App">
       <div className="displayHeader">
@@ -187,15 +226,17 @@ const RoomPage = () => {
           <div ref={chatWindowRef} id="chat_window" className="chatWindow"></div>
         </div>
         <div className="extraCards">
-          {remainingCards ? remainingCards.map((card, index) => (
-            <button onClick={() => {handleCardSelect(card.value, `otherCard-${index}`)}} id={"otherCard-" + index} className="otherCards cardOption" key={index}>
-              <div className="otherCardsOverlay"></div> 
-              <div className="cardClue">{card.hint}</div>
-            </button>
-          )) : ''}
+          <div className="extraCardsContainer">
+            {remainingCards ? remainingCards.map((card, index) => (
+              <button onClick={() => {handleCardSelect(card.value, `otherCard-${index}`)}} id={"otherCard-" + index} className="otherCards cardOption" key={index}>
+                <div className="otherCardsOverlay"></div> 
+                <div className="cardClue">{card.hint}</div>
+              </button>
+            )) : ''}
+          </div>
         </div>
         <div className="ownCard">
-          {userCard ? <button onClick={() => {handleCardSelect(userCard.value, "userCard")}} id="userCard" className="userCard cardOption"><p>{userCard.hint}</p></button>: ''}
+          {userCard ? <button onClick={() => {handleCardSelect(userCard.value, "userCard")}} id="userCard" className="userCard cardOption"><p className="cardClueUser">{userCard.hint}</p></button>: ''}
         </div>
 
         <div className="gameControls">
