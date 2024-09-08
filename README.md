@@ -14,7 +14,7 @@ To run the frontend React application locally, you need to pair it with the Snap
 
 ## How to Play
 
-__Game might be slow to start up as the server will spin down after 15 minutes of inactivity. If this is the case, simply wait 60 seconds, refresh the page and try again. __
+_Game might be slow to start up as the server will spin down after 15 minutes of inactivity. If this is the case, simply wait 60 seconds, refresh the page and try again._
 
 1. **Enter a Name**  
    Start by entering a name in the top-right corner.
