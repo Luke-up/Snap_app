@@ -1,50 +1,85 @@
-This is the frontend repository for a Snap game.
-Game uses websockets with Socket.io to enable realtime chat and gameplay.
+# Snap Game Frontend
 
-Game is available to use on: https://snap-app-qsg9.onrender.com/
-To run on your local machine this frontend React application should be paired with the snap server node application which will facilitate the backend server.
-https://github.com/Luke-up/Snap_server
+This is the frontend repository for a **Snap game**.  
+The game uses WebSockets with Socket.io to enable real-time chat and gameplay.
 
-To play first enter a name in the top right corner.
-If you are the first player you can create the room by optionally choosing topics from the options provided, if none of the options are selected the cards will show a mix of all of the categories.
+### Game Link:
+- Play the game at: [https://snap-app-qsg9.onrender.com/](https://snap-app-qsg9.onrender.com/)
 
-These categories have been filled with Japanese language onomatopeia as a fun way to study this part of speech. 
-However these can be easily editted on your own machine, should you wish to clone this repo.
-The cards.json folder determines the content of the cards.
-Cards are made of a category which should be one of the 3: animals, emotions and verbs.
-Then a value which is unique for each card, the value can be the same as one of the hints as well, this is then used to check if two selections are matching.
-Lastly each card must have 3 hint options, these can be duplicates within a single card, but multiple hints should not be the same over 2 or more cards. Otherwise this could result in a player choosing 2 cards the match, but not getting the points as the cards would have different values.
-For example if cards with the values of 'mouse' and 'rat' both shared the same hint of 'Squeak' then a player might incorrectly recieve a negative mark if choosing the 'Mouse' 'Speak' and the Rat 'Squeak' as matches.
+### Backend Server:
+To run the frontend React application locally, you need to pair it with the Snap server Node.js backend:  
+- Backend repo: [https://github.com/Luke-up/Snap_server](https://github.com/Luke-up/Snap_server)
 
-Once the categories have been chosen the create room button should be pressed which will direct you to the new room.
-In the header you can find this rooms unique id, which should be shared with other players in order for them to join.
+---
 
-To join an existing room the room must currently have less than 5 players.
-If there are 5 players already the room will be considered full.
-Enter the join id which should be shared by the room creator in the join room input box and press the join room button.
-Once more than one person has entered the room the option to ready up will show.
-Clicking ready up adds the player to the waiting players list, once all players have readied the game will begin.
-If at any point a player clicks the exit button in the top right of the screen they will return to the homescreen and their data removed from the room.
-Players will also return to the pre-ready state.
+## How to Play
 
-Once a game has started each player will recieve a card matching one of the categories selected.
-The players will have three seconds to check their own cards before the other cards are revealed.
-The player then has two options, to snap or not snap.
+1. **Enter a Name**  
+   Start by entering a name in the top-right corner.
 
-The snap button is shown in green and should only be pressed if the user sees two matching cards. 
-Once pressed this action cannot be taken back, to prevent players from hijacking a round.
-If the snap button is pressed the user must then select the two matching cards.
-These two cards will be compared and points awarded or subtracted from the user.
-Once the user presses snap the game state is paused for the rest of the users, who cannot do anything until the user clicks on the two matching cards.
-If the cards are not matches the user will recieve a score subtraction and other users will resume the round.
-Gameplay continues until a match is found or there are no more users, or in the last case if a user declares that all the cards are unique.
+2. **Create a Room**  
+   If you're the first player, you can create a room by choosing topics from the options provided.  
+   If no options are selected, a mix of all categories will be shown on the cards.
 
-The option to declare no matches is shown alongside the snap button.
-This button can be pressed if the user believes there are no matches.
-If the user is correct they will be awarded points.
-If not then they will recieve a subtraction of points and the game will continue if there are more players otherwise revert to the pre-ready state.
+3. **Game Categories**  
+   The categories are filled with Japanese onomatopoeia for fun study, but these can be edited on your own machine.  
+   - Categories are stored in the `cards.json` folder.  
+   - **Each card** must include:
+     - A **category**: animals, emotions, or verbs.
+     - A **unique value** for each card.
+     - **Three hints** (duplicates within a card are allowed, but no duplicate hints across cards).  
+       - Example: Avoid cards with "mouse" and "rat" sharing the same hint like "Squeak" to prevent scoring issues.
 
-Game scores are shown in the top left alongside a chatbox which will update the gameplay of each phase and show player actions.
-The players can also chat directly into this chatbox.
+4. **Room Creation**  
+   After selecting the categories, click the `Create Room` button. You'll be directed to the new room.  
+   - Share the unique room ID (in the header) with others to invite them.
 
-Game has been set to have a 30% chance of showing a matching pair every round.
+5. **Join a Room**  
+   A room can have a maximum of 5 players.  
+   To join, enter the room ID in the `Join Room` input box and press `Join Room`.
+
+6. **Ready Up**  
+   Once two or more players have joined, the `Ready Up` button will appear.  
+   - Players who click it will be added to the waiting list.
+   - Once all players are ready, the game will begin.
+
+7. **Exit the Room**  
+   Clicking the `Exit` button in the top-right returns the player to the homescreen, and removes their data from the room.
+
+---
+
+## Gameplay
+
+1. **Card Reveal**  
+   Once the game starts, each player receives a card based on the selected categories.  
+   - Players have **3 seconds** to check their card before all cards are revealed.
+
+2. **Snap or Not Snap**  
+   Players then decide to `Snap` or `Not Snap`.  
+   - The `Snap` button will appear in green if two matching cards are visible.  
+   - If a player presses `Snap`, they must select the two matching cards to score points.
+
+3. **Match Validation**  
+   After snapping, the game pauses, and the player selects the two cards.  
+   - **Correct match**: Player gets points, and the round ends.  
+   - **Incorrect match**: Player loses points, and the game continues.
+
+4. **Declare No Matches**  
+   Players can declare no matches if they believe there are none.  
+   - Correct declaration awards points, while an incorrect one results in a penalty.
+
+5. **End of Round**  
+   The game continues until a match is found, all players leave, or all cards are declared unique.
+
+---
+
+## Scoring and Chat
+
+- **Game Scores**: Shown in the top-left corner of the screen.
+- **Chatbox**: A chatbox is available to communicate with other players and track game progress and actions.
+
+---
+
+### Game Logic
+
+- There is a **30% chance** of showing a matching pair in each round.
