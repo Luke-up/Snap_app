@@ -16,7 +16,6 @@ const HomePage = () => {
     const fetchData = async () => {
       try {
         const response = await axios.get(`${process.env.REACT_APP_SOCKET_URL}/status`);
-        console.log(response);
         if (response.status === 200) {
           navigate('/');
         }
