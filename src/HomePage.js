@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import socket from './socket';
 import './homepage.scss';
 
@@ -10,6 +11,22 @@ const HomePage = () => {
   const [emotionsSetting, setEmotionsSetting] = useState(false);
   const [verbsSetting, setVerbsSetting] = useState(false);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const response = await axios.get(`${process.env.REACT_APP_SOCKET_URL}/status`);
+        console.log(response);
+        if (response.status === 200) {
+          navigate('/');
+        }
+      } catch (error) {
+        navigate('/waiting');
+      }
+    };
+
+    fetchData();
+  }, [navigate]);
 
   const createRoom = () => {
     const roomSettings = {
