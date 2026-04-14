@@ -3,27 +3,30 @@ import { useNavigate } from 'react-router-dom';
 import socket from './socket';
 import './roompage.scss';
 
+const INITIAL_GAME_STATE = {lobby: true, inGame: false, gameHero: false, gameObserver: false, gameLoser: false, gameCheck: false};
+const SOLO_PLAYER_STATE = {lobby: false, inGame: false, gameHero: false, gameObserver: true, gameLoser: false, gameCheck: false};
+
 const RoomPage = () => {
   const [name, setName] = useState('');
   const [chat, setChat] = useState('');
   const [roomInfo, setRoomInfo] = useState('');
   const chatWindowRef = useRef(null);
   const socketRef = useRef(null);
-  const [gameState, setGameState] = useState({lobby: true, inGame: false, gameHero: false, gameObserver: false, gameLoser: false, gameCheck: false});
+  const [gameState, setGameState] = useState(INITIAL_GAME_STATE);
   const [userCard, setUserCard] = useState(null);
   const [remainingCards, setRemainingCards] = useState([]);
   const [scoreCard, setScoreCard] = useState([]);
-  let selectedCards = [];
+  const selectedCardsRef = useRef([]);
   const navigate = useNavigate();
 
   useEffect(() => {
     setName(sessionStorage.getItem('name'));
     setRoomInfo(sessionStorage.getItem('roomId'));
-    const newScoreCard = JSON.parse(sessionStorage.getItem('scoreCard'));
-    setScoreCard(newScoreCard.scoreCard);
+    const newScoreCard = JSON.parse(sessionStorage.getItem('scoreCard') || '{}');
+    setScoreCard(newScoreCard.scoreCard || []);
     socketRef.current = socket;
-    if (Object.keys(newScoreCard.scoreCard).length === 1){
-      setGameState({lobby: false, inGame: false, gameHero: false, gameObserver: true, gameLoser: false, gameCheck: false});
+    if (newScoreCard.scoreCard && Object.keys(newScoreCard.scoreCard).length === 1){
+      setGameState(SOLO_PLAYER_STATE);
     }
 
     socket.on('connect', () => {
@@ -48,7 +51,7 @@ const RoomPage = () => {
         if (data.scoreCard) {
           setScoreCard(data.scoreCard);
           if (Object.keys(data.scoreCard).length === 1){
-            setGameState({lobby: false, inGame: false, gameHero: false, gameObserver: true, gameLoser: false, gameCheck: false});
+            setGameState(SOLO_PLAYER_STATE);
           }
         }
         
@@ -62,20 +65,44 @@ const RoomPage = () => {
       appendMessage(data.message);
       setScoreCard(data.scoreCard);
       if (Object.keys(data.scoreCard).length > 1){
-        setGameState({lobby: true, inGame: false, gameHero: false, gameObserver: false, gameLoser: false, gameCheck: false});
+        setGameState(INITIAL_GAME_STATE);
       }
     });
 
     socket.on('roomJoined', (data) => {
-      appendMessage(data.message);
+      if (data.message) {
+        appendMessage(data.message);
+      }
       setScoreCard(data.scoreCard);
       if (Object.keys(data.scoreCard).length > 1){
-        setGameState({lobby: true, inGame: false, gameHero: false, gameObserver: false, gameLoser: false, gameCheck: false});
+        setGameState(INITIAL_GAME_STATE);
       }
     });
 
-    socket.on('receiveCards', ({ userCard, remainingCards }) => {
-      receiveCards({ userCard, remainingCards });
+    socket.on('receiveCards', ({ userCard: incomingUserCard, remainingCards: incomingRemainingCards }) => {
+      document.querySelectorAll('.cardOption').forEach(element => {
+        element.style.opacity = '0';
+        element.style.marginTop = '-50px';
+      });
+      setTimeout(() => {
+        document.querySelectorAll('.otherCardsOverlay').forEach(element => {
+          element.style.display = 'block';
+        });
+        document.querySelectorAll('.cardOption').forEach(element => {
+          element.classList.remove('selected');
+        });
+        setUserCard(incomingUserCard);
+        setRemainingCards(incomingRemainingCards);
+      }, 400);
+      setTimeout(() => {
+        resizeFontSize();
+      }, 500);
+      setTimeout(() => {
+        document.querySelectorAll('.cardOption').forEach(element => {
+          element.style.opacity = '1';
+          element.style.marginTop = '0';
+        });
+      }, 1000);
     });
 
     return () => {
@@ -88,71 +115,59 @@ const RoomPage = () => {
     };
   }, []);
 
+  const emitAction = (action, extra = {}) => {
+    socketRef.current.emit('action', { timestamp: Date.now(), name, action, ...extra });
+  };
+
   const handleChat = (event) => {
     event.preventDefault();
-    socketRef.current.emit('chat', { timestamp: Date.now(), name: name, chat: chat });
+    const message = chat.trim();
+    if (!message) {
+      return;
+    }
+    socketRef.current.emit('chat', { timestamp: Date.now(), name, chat: message });
     setChat('');
   };
 
   const handleLogOut = () => {
-    socketRef.current.emit('action', { timestamp: Date.now(), name: name, action: 'logout' });
+    emitAction('logout');
     navigate(`/`);
   };
 
   const handleReady = () => {
-    socketRef.current.emit('action', { timestamp: Date.now(), name: name, action: 'ready' });
+    emitAction('ready');
   };
 
   const handleSnap = () => {
-    socketRef.current.emit('action', { timestamp: Date.now(), name: name, action: 'snap' });
+    emitAction('snap');
   };
 
   const handleNoSnap = () => {
-    socketRef.current.emit('action', { timestamp: Date.now(), name: name, action: 'noSnap' });
+    emitAction('noSnap');
   };
 
   const handleCardSelect = (card, elementID) => {
-    if (gameState.gameHero) {
-      document.getElementById(elementID).classList.add('selected');
-      if (selectedCards[0] && selectedCards[0].elementID === elementID){
-        document.getElementById(elementID).classList.remove('selected');
-        selectedCards = [];
-      } else if (selectedCards.length !== 0) {
-        selectedCards.push({card: card, elementID: elementID});
-        socketRef.current.emit('action', { timestamp: Date.now(), name: name, cards: selectedCards, action: 'cardSelect' });
-        selectedCards = [];
-      } else {
-        selectedCards.push({card: card, elementID: elementID});
-      }
-    } else {
+    if (!gameState.gameHero) {
       return;
     }
-  };
 
-  const receiveCards = ({ userCard, remainingCards }) => {
-    document.querySelectorAll('.cardOption').forEach(element => {
-      element.style.opacity = '0';
-      element.style.marginTop = '-50px';
-    });
-    setTimeout(() => {
-      document.querySelectorAll('.otherCardsOverlay').forEach(element => {
-        element.style.display = 'block';
-      });
-      document.querySelectorAll('.cardOption').forEach(element => {
-        element.classList.remove('selected');
-      });
-      setUserCard(userCard);
-      setRemainingCards(remainingCards);
-    }, 400);
-    setTimeout(() => {
-      resizeFontSize();
-    }, 500);
-    setTimeout(() => {
-      document.querySelectorAll('.cardOption').forEach(element => {
-        element.style.opacity = '1';
-        element.style.marginTop = '0';
-      });
-    }, 1000);
+    const selectedCards = selectedCardsRef.current;
+    const selectedElement = document.getElementById(elementID);
+    if (!selectedElement) {
+      return;
+    }
+
+    selectedElement.classList.add('selected');
+    if (selectedCards[0] && selectedCards[0].elementID === elementID){
+      selectedElement.classList.remove('selected');
+      selectedCardsRef.current = [];
+    } else if (selectedCards.length !== 0) {
+      const updatedSelection = [...selectedCards, {card: card, elementID: elementID}];
+      emitAction('cardSelect', { cards: updatedSelection });
+      selectedCardsRef.current = [];
+    } else {
+      selectedCardsRef.current = [{card: card, elementID: elementID}];
+    }
   };
 
   const gameStart = () => {

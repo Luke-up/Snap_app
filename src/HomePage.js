@@ -28,24 +28,33 @@ const HomePage = () => {
   }, [navigate]);
 
   const createRoom = () => {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      return;
+    }
     const roomSettings = {
       categories: {
       animals: animalsSetting,
       emotions: emotionsSetting,
       verbs: verbsSetting,
       }, 
-      name: name,
+      name: trimmedName,
     };
-    sessionStorage.setItem('name', name);
+    sessionStorage.setItem('name', trimmedName);
     socket.emit('createRoom', roomSettings);
   };
 
   const joinRoom = () => {
+    const trimmedName = name.trim();
+    const trimmedRoomId = roomId.trim();
+    if (!trimmedName || !trimmedRoomId) {
+      return;
+    }
     const joinSettings = {
-      name: name,
-      roomId: roomId,
+      name: trimmedName,
+      roomId: trimmedRoomId,
     };
-    sessionStorage.setItem('name', name);
+    sessionStorage.setItem('name', trimmedName);
     socket.emit('joinRoom', joinSettings);
   };
 
@@ -57,7 +66,6 @@ const HomePage = () => {
     });
 
     socket.on('roomJoined', (data) => {
-      console.log(data.scoreCard);
       sessionStorage.setItem('scoreCard', JSON.stringify(data));
       sessionStorage.setItem('roomId', data.roomId);
       navigate(`/room/${data.roomId}`);
